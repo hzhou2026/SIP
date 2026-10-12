@@ -4,7 +4,6 @@
 *.ctxt
 
 # Empaquetados (pueden descomentarse si necesitas versionar dependencias manuales)
-*.jar
 *.war
 *.nar
 *.ear
@@ -43,10 +42,7 @@ cmake-build-*/
 
 # Eclipse
 .apt_generated/
-.classpath
 .factorypath
-.project
-.settings/
 .springBeans
 
 # NetBeans
@@ -63,3 +59,9 @@ nbdist/
 .DS_Store
 Thumbs.db
 Desktop.ini
+# Secretos
+.env
+*.pem
+*.key
+*.p12
+id_rsa*
