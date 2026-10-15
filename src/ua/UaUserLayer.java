@@ -6,10 +6,14 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 
 import common.FindMyIPv4;
 import mensajesSIP.InviteMessage;
+import mensajesSIP.RegisterMessage;
 import mensajesSIP.SDPMessage;
 
 public class UaUserLayer {
@@ -28,11 +32,70 @@ public class UaUserLayer {
 	private Process vitextClient = null;
 	private Process vitextServer = null;
 
-	public UaUserLayer(int listenPort, String proxyAddress, int proxyPort)
-			throws SocketException, UnknownHostException {
-		this.transactionLayer = new UaTransactionLayer(listenPort, proxyAddress, proxyPort, this);
+	// Datos de registro
+	private String userName;
+	private String domain;
+	private int registerTime; // segundos (cabecera Expires)
+	private String registerCallId = UUID.randomUUID().toString();
+	private int registerCSeq = 0;
+	private Timer registerTimer;
+	private CountDownLatch registered = new CountDownLatch(1);
+
+	public UaUserLayer(String userName, String domain, int listenPort, String proxyAddress, int proxyPort,
+			boolean debug, int registerTime) throws SocketException, UnknownHostException {
+		this.userName = userName;
+		this.domain = domain;
+		this.registerTime = registerTime;
+		this.transactionLayer = new UaTransactionLayer(listenPort, proxyAddress, proxyPort, debug, this);
 		this.listenPort = listenPort;
 		this.rtpPort = listenPort + 1;
+	}
+
+	// Registra al usuario en el proxy y espera a recibir el 200 OK
+	public void register() throws IOException, InterruptedException {
+		sendRegister();
+		registered.await();
+	}
+
+	private void sendRegister() throws IOException {
+		RegisterMessage registerMessage = new RegisterMessage();
+		registerMessage.setDestination("sip:" + domain);
+		registerMessage.setVias(new ArrayList<String>(Arrays.asList(this.myAddress + ":" + this.listenPort)));
+		registerMessage.setMaxForwards(70);
+		registerMessage.setToName(userName);
+		registerMessage.setToUri("sip:" + userName + "@" + domain);
+		registerMessage.setFromName(userName);
+		registerMessage.setFromUri("sip:" + userName + "@" + domain);
+		registerMessage.setCallId(registerCallId);
+		registerCSeq++;
+		registerMessage.setcSeqNumber(String.valueOf(registerCSeq));
+		registerMessage.setcSeqStr("REGISTER");
+		registerMessage.setContact(myAddress + ":" + listenPort);
+		registerMessage.setExpires(String.valueOf(registerTime));
+		registerMessage.setContentLength(0);
+		transactionLayer.register(registerMessage);
+	}
+
+	// 200 OK al REGISTER: se permiten llamadas y se programa el siguiente registro al expirar este
+	public void onRegisterResponseReceived() {
+		registered.countDown();
+		registerTimer = new Timer(true);
+		registerTimer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				try {
+					sendRegister();
+				} catch (IOException e) {
+					System.err.println(e.getMessage());
+				}
+			}
+		}, registerTime * 1000L);
+	}
+
+	// 404 al REGISTER: usuario no permitido, el UA finaliza
+	public void onRegisterNotFound() {
+		System.out.println("Usuario no registrado en el proxy (404 Not Found). Finalizando.");
+		System.exit(1);
 	}
 
 	public void onInviteReceived(InviteMessage inviteMessage) throws IOException {
