@@ -1,7 +1,7 @@
 /*
- * Código de base para parsear mensajes SIP
+ * Cï¿½digo de base para parsear mensajes SIP
  * Puede ser adaptado, ampliado, modificado por el alumno
- * según sus necesidades para la práctica
+ * segï¿½n sus necesidades para la prï¿½ctica
  */
 package mensajesSIP;
 
@@ -37,10 +37,9 @@ public class SDPMessage {
 
 /**
  * Recupera el ArrayList que contiene las opciones ofrecidas en el mensaje SDP.
- * <p>Las opciones pueden ser 96|97|98.</p>
- * <p>96 genera la linea a=rtpmap:96 L8/8000 </p>
- * <p>97 genera la linea a=rtpmap:97 L16/8000 </p>
- * <p>98 genera la linea a=rtpmap:98 L8/11025/2 </p>
+ * <p>Las opciones pueden ser 99|90.</p>
+ * <p>99 genera la linea a=rtpmap:99 h261/90000 </p>
+ * <p>90 genera la linea a=rtpmap:90 h263-1998/90000 </p>
  * 
  * @return      el ArrayList con las opciones
  */
@@ -51,10 +50,9 @@ public class SDPMessage {
 
 /**
  * Establece el ArrayList que contiene las opciones ofrecidas en el mensaje SDP.
- * <p>Las opciones pueden ser 96|97|98.</p>
- * <p>96 genera la linea a=rtpmap:96 L8/8000 </p>
- * <p>97 genera la linea a=rtpmap:97 L16/8000 </p>
- * <p>98 genera la linea a=rtpmap:98 L8/11025/2 </p>
+ * <p>Las opciones pueden ser 99|90.</p>
+ * <p>99 genera la linea a=rtpmap:99 h261/90000 </p>
+ * <p>90 genera la linea a=rtpmap:90 h263-1998/90000 </p>
  * 
  * @param options     el ArrayList con las opciones
  */
@@ -75,7 +73,7 @@ public class SDPMessage {
     }
 
 /**
- * Convierte el mensaje en un String. Para ello concatena la información de las opciones c y m con la IP, puerto y opciones de los atributos de la clase.
+ * Convierte el mensaje en un String. Para ello concatena la informaciï¿½n de las opciones c y m con la IP, puerto y opciones de los atributos de la clase.
  * 
  * @return      el mensaje como String.
  */
@@ -85,15 +83,13 @@ public class SDPMessage {
         String a = "";
         
         sdp = "c=IN IP4 " + ip + "\n";
-        sdp += "m=audio " + port + " RTP/AVP";
+        sdp += "m=video " + port + " RTP/AVP";
         for (int i = 0; i < options.size(); i++) {
             sdp += " " + options.get(i);
-            if (options.get(i) == 96) {
-                a += "a=rtpmap:96 L8/8000\n";
-            } else if (options.get(i) == 97) {
-                a += "a=rtpmap:97 L16/8000\n";
-            } else if (options.get(i) == 98) {
-                a += "a=rtpmap:98 L8/11025/2\n";
+            if (options.get(i) == 99) {
+                a += "a=rtpmap:99 h261/90000\n";
+            } else if (options.get(i) == 90) {
+                a += "a=rtpmap:90 h263-1998/90000\n";
             }
         }
         sdp += "\n";
@@ -114,7 +110,7 @@ public class SDPMessage {
     }
 
     private void parseM(String line) throws SIPException {
-        Pattern pattern = Pattern.compile("m=audio (\\d+) RTP/AVP (96|97|98) ?(96|97|98)? ?(96|97|98)?");
+        Pattern pattern = Pattern.compile("m=video (\\d+) RTP/AVP (99|90) ?(99|90)?");
         
         //System.out.println(line);
         Matcher matcher = pattern.matcher(line);
